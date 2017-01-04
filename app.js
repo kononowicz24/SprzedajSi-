@@ -45,41 +45,60 @@ app.get('/', function(req,res) {
   });
 });
 
-app.use('/login', express.static('login_page'));
+app.use('/login', function(req,res){
+  res.render('pages/signin');
+});
 
 
 app.post('/logIn', function(req, res){
   var logInM = req.body.mail;
   var logInH = req.body.haslo;
-  res.send("e-mail: " + logInM + " hasło: "+ logInH);
+
+  pool.getConnection(function(err,connection) {
+
+    console.log('connected as id '+ connection.threadId);
+
+    var dBquery = "SELECT haslo FROM uzytkownicy WHERE mail =" + req.body.mail
+
+    connection.query(dBquery, function(err, rows, fields) {
+      var query = JSON.parse(rows);
+
+      if (err) {
+        throw err;
+      } else {
+        console.log("put");
+      }
+      connection.release();
+    });
+  });
+
+  res.redirect('/');
   //express.static('home_page')
 })
 
 app.post('/RegIn', function(req, res){
-  var regInM = req.body.mail;
-  var regInI = req.body.imie;
-  var regInN = req.body.nazwisko;
-  var regInNick = req.body.nick;
-  var regInH1 = req.body.haslo;
-  var regInH2 = req.body.hasloAgain;
   pool.getConnection(function(err,connection) {
     //console.log('connected as id ' + connection.threadId);
     console.log('connected as id '+ connection.threadId);
-    var dBquery = "INSERT INTO uzytkownicy VALUES("
-                + regInM + ","
-                + regInI + ","
-                + regInN + ","
-                + regInNick + ","
-                + regInH1 + ","
-                + "2016-12-13" + ","
-                + 5 + ","
+    var dBquery = "INSERT INTO uzytkownicy (mail, imie, nazwisko, nick, haslo, datarej, punkty, ogloszenia) VALUES ('"
+                + req.body.mail + "','"
+                + req.body.imie + "','"
+                + req.body.nazwisko + "','"
+                + req.body.nick + "','"
+                + req.body.haslo + "',"
+                + "CURDATE()"+ ","
                 + 0 + ","
-                +")";
-    connection.query(dBquery);
-
-
+                + 0 +")";
+    connection.query(dBquery, function(err, rows2, fields) {
+      if (err) {
+        throw err;
+      } else {
+        console.log("put");
+      }
+      connection.release();
+    });
   });
-  res.send("e-mail: " + regInM + " imie: "+ regInI);
+  res.redirect('/login/');
   //express.static('home_page')
 })
 
